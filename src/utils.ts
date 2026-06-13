@@ -29,10 +29,27 @@ export function decodeData(compressed: string): BulletinData | null {
 }
 
 /**
- * Shortens a URL using is.gd or v.gd via JSONP (bypassing CORS), or falling back to proxying through corsproxy.io.
- * This ensures reliability even if direct shorteners are blocked by local ad blockers (e.g., uBlock / Adblock in Chrome).
+ * Shortens a URL using spoo.me (CORS-friendly POST, doesn't blacklist github.io),
+ * falling back to is.gd or v.gd via JSONP.
  */
 export function shortenUrl(longUrl: string): Promise<string> {
+  const trySpooMe = async (): Promise<string> => {
+    const response = await fetch("https://spoo.me/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json"
+      },
+      body: new URLSearchParams({ url: longUrl })
+    });
+    if (!response.ok) throw new Error("spoo.me API responded with error");
+    const data = await response.json();
+    if (data && data.short_url) {
+      return data.short_url.replace("http://", "https://");
+    }
+    throw new Error("Invalid response from spoo.me");
+  };
+
   const tryIsGdJsonp = (baseUrl: string): Promise<string> => {
     return new Promise((resolve, reject) => {
       const callbackName = `isgd_callback_${Math.floor(Math.random() * 1000000)}`;
@@ -67,41 +84,18 @@ export function shortenUrl(longUrl: string): Promise<string> {
     });
   };
 
-  const tryTinyUrlViaProxy = async (): Promise<string> => {
-    const proxyUrl = `https://corsproxy.io/?https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`;
-    const response = await fetch(proxyUrl);
-    if (!response.ok) throw new Error("TinyURL via proxy failed");
-    const text = await response.text();
-    if (text && text.trim().startsWith("http")) {
-      return text.trim();
-    }
-    throw new Error("Invalid response from TinyURL proxy");
-  };
-
-  const tryIsGdViaProxy = async (): Promise<string> => {
-    const proxyUrl = `https://corsproxy.io/?https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
-    const response = await fetch(proxyUrl);
-    if (!response.ok) throw new Error("is.gd via proxy failed");
-    const text = await response.text();
-    if (text && text.trim().startsWith("http")) {
-      return text.trim();
-    }
-    throw new Error("Invalid response from is.gd proxy");
-  };
-
-  // Run the fallback chain
-  return tryIsGdJsonp("https://is.gd")
+  // Run the fallback chain:
+  // 1. spoo.me (CORS, supports github.io, most reliable for this setup)
+  // 2. is.gd JSONP (direct client-side fallback)
+  // 3. v.gd JSONP (direct client-side backup)
+  return trySpooMe()
+    .catch((err) => {
+      console.warn("spoo.me shortening failed, trying is.gd JSONP...", err);
+      return tryIsGdJsonp("https://is.gd");
+    })
     .catch((err) => {
       console.warn("is.gd JSONP failed, trying v.gd JSONP...", err);
       return tryIsGdJsonp("https://v.gd");
-    })
-    .catch((err) => {
-      console.warn("v.gd JSONP failed, trying TinyURL via proxy...", err);
-      return tryTinyUrlViaProxy();
-    })
-    .catch((err) => {
-      console.warn("TinyURL via proxy failed, trying is.gd via proxy...", err);
-      return tryIsGdViaProxy();
     });
 }
 
