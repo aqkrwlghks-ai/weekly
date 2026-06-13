@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BulletinData, DesignTheme } from "../types";
 import { encodeData, shortenUrl, copyTextLegacy } from "../utils";
 import html2canvas from "html2canvas-pro";
@@ -26,6 +26,39 @@ interface MobilePreviewProps {
 export default function MobilePreview({ data, activeTheme, hideToggle = false }: MobilePreviewProps) {
   const [viewMode, setViewMode] = useState<"card" | "kakao">("card");
   const [isShortening, setIsShortening] = useState(false);
+  const [shortenedUrl, setShortenedUrl] = useState<string | null>(null);
+
+  // Pre-generate short URL in the background when data changes
+  useEffect(() => {
+    // Reset shortened URL immediately when data changes so we don't copy stale data
+    setShortenedUrl(null);
+
+    const debounceTimer = setTimeout(async () => {
+      const encoded = encodeData(data);
+      const longUrl = `${window.location.origin}${window.location.pathname}?theme=${activeTheme.id}&data=${encoded}`;
+      try {
+        const url = await shortenUrl(longUrl);
+        setShortenedUrl(url);
+      } catch (err) {
+        console.warn("Background URL shortening failed:", err);
+      }
+    }, 2000); // 2 seconds debounce
+
+    return () => clearTimeout(debounceTimer);
+  }, [data, activeTheme]);
+
+  // Pre-generate instantly when user hovers or focuses on the sharing button
+  const handlePreShorten = async () => {
+    if (shortenedUrl) return; // Already generated
+    const encoded = encodeData(data);
+    const longUrl = `${window.location.origin}${window.location.pathname}?theme=${activeTheme.id}&data=${encoded}`;
+    try {
+      const url = await shortenUrl(longUrl);
+      setShortenedUrl(url);
+    } catch (err) {
+      console.warn("Hover URL shortening failed:", err);
+    }
+  };
 
   const praiseList = data.praiseSongs;
 
@@ -81,23 +114,49 @@ export default function MobilePreview({ data, activeTheme, hideToggle = false }:
     }
   };
 
-  // 3. Copy Web Share Link (One-click copy with prompt fallback)
+  // 3. Copy Web Share Link (One-click copy with background pre-generation)
   const handleCopyShareLink = async () => {
     const encoded = encodeData(data);
     const longUrl = `${window.location.origin}${window.location.pathname}?theme=${activeTheme.id}&data=${encoded}`;
     
+    // Check if we already have the shortened URL pre-generated in the background
+    if (shortenedUrl) {
+      // Synchronous copy (Guaranteed to succeed because there is no async wait/delay!)
+      let copySuccess = false;
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(shortenedUrl);
+          copySuccess = true;
+        } catch (e) {
+          console.warn("Synchronous copy failed:", e);
+        }
+      }
+      
+      if (!copySuccess) {
+        copySuccess = copyTextLegacy(shortenedUrl);
+      }
+      
+      if (copySuccess) {
+        alert("🔗 단축된 모바일 주보 공유 주소가 복사되었습니다!\n카카오톡 단체방이나 공지방에 붙여넣기(Ctrl+V) 하세요.");
+        return;
+      }
+    }
+    
+    // If not pre-generated or if synchronous copy failed, fall back to dynamic async shortening
     setIsShortening(true);
     try {
-      const shortUrl = await shortenUrl(longUrl);
+      const shortUrl = shortenedUrl || (await shortenUrl(longUrl));
+      if (!shortenedUrl) {
+        setShortenedUrl(shortUrl);
+      }
       
-      // Try copying short URL to clipboard
       let copySuccess = false;
       if (navigator.clipboard && window.isSecureContext) {
         try {
           await navigator.clipboard.writeText(shortUrl);
           copySuccess = true;
         } catch (e) {
-          console.warn("navigator.clipboard.writeText failed:", e);
+          console.warn("Async copy failed:", e);
         }
       }
       
@@ -108,13 +167,11 @@ export default function MobilePreview({ data, activeTheme, hideToggle = false }:
       if (copySuccess) {
         alert("🔗 단축된 모바일 주보 공유 주소가 복사되었습니다!\n카카오톡 단체방이나 공지방에 붙여넣기(Ctrl+V) 하세요.");
       } else {
-        // Fallback for strict mobile webviews where clipboard write is blocked
         window.prompt("브라우저 보안으로 인해 자동 복사가 차단되었습니다.\n아래의 단축 링크를 직접 복사해 주세요:", shortUrl);
       }
     } catch (err) {
       console.warn("Link shortening failed, using long URL:", err);
       
-      // Try copying long URL to clipboard
       let copySuccess = false;
       if (navigator.clipboard && window.isSecureContext) {
         try {
@@ -574,6 +631,8 @@ ${checklistsText}
 
               <button
                 onClick={handleCopyShareLink}
+                onMouseEnter={handlePreShorten}
+                onFocus={handlePreShorten}
                 disabled={isShortening}
                 className="flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
