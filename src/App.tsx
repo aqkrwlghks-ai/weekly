@@ -61,12 +61,6 @@ export default function App() {
           <MobilePreview data={bulletinData} activeTheme={activeTheme} hideToggle={true} />
           
           <div className="flex flex-col gap-2 mt-2">
-            <a 
-              href={window.location.pathname}
-              className="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs text-center transition-all shadow-md flex items-center justify-center gap-2 border-0 no-underline"
-            >
-              <span>✨ 나도 모바일 주보 작성기 만들기</span>
-            </a>
             <p className="text-[10px] text-slate-500 text-center font-mono">
               © 2026 Mobile Bulletin Editor. All rights reserved.
             </p>
