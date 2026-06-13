@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { BulletinData, DesignTheme } from "../types";
 import { encodeData } from "../utils";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 import { 
   Smartphone, 
   MessageSquare, 
