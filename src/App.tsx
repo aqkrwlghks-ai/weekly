@@ -4,6 +4,7 @@ import { BulletinData, DesignTheme } from "./types";
 import WorshipForm from "./components/WorshipForm";
 import MobilePreview from "./components/MobilePreview";
 import DesignGuideView from "./components/DesignGuideView";
+import { decodeData } from "./utils";
 import { 
   Heart, 
   Sparkles, 
@@ -17,16 +18,63 @@ import {
 } from "lucide-react";
 
 export default function App() {
-  const [bulletinData, setBulletinData] = useState<BulletinData>(DEFAULT_BULLETIN_DATA);
-  const [activeTheme, setActiveTheme] = useState<DesignTheme>(DESIGN_THEMES[0]);
+  // Parse shared query parameters
+  const queryParams = new URLSearchParams(window.location.search);
+  const sharedDataParam = queryParams.get("data");
+  const sharedThemeParam = queryParams.get("theme");
+  const isSharedView = !!sharedDataParam;
+
+  const [bulletinData, setBulletinData] = useState<BulletinData>(() => {
+    if (sharedDataParam) {
+      const decoded = decodeData(sharedDataParam);
+      if (decoded) return decoded;
+    }
+    return DEFAULT_BULLETIN_DATA;
+  });
+
+  const [activeTheme, setActiveTheme] = useState<DesignTheme>(() => {
+    if (sharedThemeParam) {
+      const found = DESIGN_THEMES.find((t) => t.id === sharedThemeParam);
+      if (found) return found;
+    }
+    return DESIGN_THEMES[0];
+  });
+
   const [showWelcomeMsg, setShowWelcomeMsg] = useState(true);
 
   // Quick reset to default templates
   const handleResetData = () => {
-    if (window.confirm("주보 편집 내용을 원본 기값으로 리셋하시겠습니까?")) {
+    if (window.confirm("주보 편집 내용을 원본 초기값으로 리셋하시겠습니까?")) {
       setBulletinData(DEFAULT_BULLETIN_DATA);
     }
   };
+
+  if (isSharedView) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-[360px] flex flex-col gap-4">
+          <div className="text-center text-white space-y-1">
+            <span className="text-[10px] font-bold tracking-widest text-teal-400 uppercase font-mono">Mobile Bulletin</span>
+            <h1 className="text-sm font-bold opacity-90">⛪️ 주일 예배 모바일 주보</h1>
+          </div>
+          
+          <MobilePreview data={bulletinData} activeTheme={activeTheme} hideToggle={true} />
+          
+          <div className="flex flex-col gap-2 mt-2">
+            <a 
+              href={window.location.pathname}
+              className="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs text-center transition-all shadow-md flex items-center justify-center gap-2 border-0 no-underline"
+            >
+              <span>✨ 나도 모바일 주보 작성기 만들기</span>
+            </a>
+            <p className="text-[10px] text-slate-500 text-center font-mono">
+              © 2026 Mobile Bulletin Editor. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans">
