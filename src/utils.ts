@@ -1,14 +1,13 @@
 import { BulletinData } from "./types";
+import LZString from "lz-string";
 
 /**
- * Encodes BulletinData to a URL-safe Base64 string.
+ * Encodes BulletinData to a highly compressed, URL-safe string.
  */
 export function encodeData(data: BulletinData): string {
   try {
     const jsonStr = JSON.stringify(data);
-    return btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (_, p1) => {
-      return String.fromCharCode(parseInt(p1, 16));
-    }));
+    return LZString.compressToEncodedURIComponent(jsonStr);
   } catch (e) {
     console.error("Failed to encode bulletin data:", e);
     return "";
@@ -16,13 +15,12 @@ export function encodeData(data: BulletinData): string {
 }
 
 /**
- * Decodes a Base64 string back to BulletinData.
+ * Decodes a compressed string back to BulletinData.
  */
-export function decodeData(base64: string): BulletinData | null {
+export function decodeData(compressed: string): BulletinData | null {
   try {
-    const jsonStr = decodeURIComponent(atob(base64).split("").map((c) => {
-      return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(""));
+    const jsonStr = LZString.decompressFromEncodedURIComponent(compressed);
+    if (!jsonStr) return null;
     return JSON.parse(jsonStr);
   } catch (e) {
     console.error("Failed to decode bulletin data:", e);

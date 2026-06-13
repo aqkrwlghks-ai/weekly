@@ -91,7 +91,7 @@ export const INSTAGRAM_PRESETS = [
 
 export const DESIGN_THEMES: DesignTheme[] = [
   {
-    id: "theme-bold-typography",
+    id: "bold",
     name: "볼드 타이포 & 레트로 세이지 (Bold Sage)",
     description: "따뜻한 일상의 기록 - 매거진 감성 세리프와 차분한 초록 에디션",
     concept: "인드타그램 매거진이나 디자인 무드보드에서 영감을 얻은 레이아웃. 과감한 폰트 대비와 코지한 리츄얼 세이지 그린(#7D8F69), 초콜릿 브라운(#4A3728) 조합이 세심하고 깊이 있는 청년들의 감수성을 자극합니다.",
@@ -117,7 +117,7 @@ export const DESIGN_THEMES: DesignTheme[] = [
     ]
   },
   {
-    id: "theme-warm-cozy",
+    id: "warm",
     name: "웜 코지 베이지 (Cafe Beige)",
     description: "따뜻한 카페나 일상의 안락함이 느껴지는 크림피치 에디션",
     concept: "마음의 온도를 높여주는 온화하고 단아한 분위기. 눈이 편안한 페이퍼 톤 베경에 복숭아색 포인트를 주어 세심하고 감수성이 풍부한 청년들의 감성에 제격입니다.",
@@ -143,7 +143,7 @@ export const DESIGN_THEMES: DesignTheme[] = [
     ]
   },
   {
-    id: "theme-modern-mint",
+    id: "modern",
     name: "시크 민트 슬레이트 (Modern Slate)",
     description: "인스타그램이나 핀터레스트에서 많이 보이는 쿨하고 트렌디한 무드",
     concept: "세련되고 힙한 레이아웃. 연회색 무채색 슬레이트 베이스에 형광빛이 감도는 브라이트 민트그린을 포인트로 삼아 활기차고 정갈한 현대 세대 감성을 자극합니다.",
@@ -169,7 +169,7 @@ export const DESIGN_THEMES: DesignTheme[] = [
     ]
   },
   {
-    id: "theme-deep-space",
+    id: "deep",
     name: "딥 스피릿 나잇 (Deep Spiritual Space)",
     description: "밤하늘 은하수 밑, 찬양 사역과 어쿠스틱 예배에 어울리는 감성 다크 모드",
     concept: "오직 주님의 임재와 내 내면의 묵상에 고도로 불을 밝히는 아우라 무드. 딥 인디고 밤하늘 색상 위에 레몬 옐로우와 아쿠아 스카이 블루가 은은하게 도드라져 마음을 집중하게 만듭니다.",
