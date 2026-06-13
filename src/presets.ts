@@ -27,6 +27,7 @@ export const DEFAULT_BULLETIN_DATA: BulletinData = {
     "소원 (My Desire)"
   ],
   prayerLeader: "김다윗 리더",
+  announcementLeader: "임원진",
   bibleVerse: "마태복음 5장 13-16절 (Matthew 5:13-16)",
   sermonTitle: "소금과 빛",
   preacher: "박사랑 목사님",

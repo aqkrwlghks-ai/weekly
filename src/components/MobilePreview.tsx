@@ -114,6 +114,7 @@ ${data.greetingContent}
 ${praises}
 
 • 🙏 대표기도: ${data.prayerLeader}
+• 📢 교제 및 소식: ${data.announcementLeader || "임원진"}
 • 📖 말씀봉독: ${data.bibleVerse}
 • 📖 말씀선포:
  [${data.sermonTitle}] - ${data.preacher}
@@ -253,11 +254,11 @@ ${checklistsText}
 
                 {/* Section 2: Worship Order List */}
                 <div className={`p-4 rounded-2xl ${activeTheme.cardBg} border ${activeTheme.borderColor} shadow-xs space-y-4`}>
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <h3 className="text-xs font-bold tracking-wider flex items-center gap-1.2 font-mono">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2 flex-wrap gap-y-1">
+                    <h3 className="text-xs font-bold tracking-wider flex items-center gap-1.5 font-mono whitespace-nowrap">
                       <span>✝</span> SCHEDULE OF WORSHIP
                     </h3>
-                    <span className="text-[9px] font-bold opacity-60">주일 부서 예배순서</span>
+                    <span className="text-[9px] font-bold opacity-60 whitespace-nowrap">주일 부서 예배순서</span>
                   </div>
 
                   <div className="space-y-3.5 text-xs">
@@ -295,7 +296,7 @@ ${checklistsText}
                         <ChevronRight className="w-3.5 h-3.5 opacity-60 text-teal-500" />
                         <span>교제 및 소식</span>
                       </span>
-                      <span className="font-bold">임원진</span>
+                      <span className="font-bold">{data.announcementLeader || "임원진"}</span>
                     </div>
 
                     {/* Scripture Reading */}

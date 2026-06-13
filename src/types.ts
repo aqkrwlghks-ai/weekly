@@ -3,6 +3,7 @@ export interface BulletinData {
   greetingContent: string;
   praiseSongs: string[];
   prayerLeader: string;
+  announcementLeader: string;
   bibleVerse: string;
   sermonTitle: string;
   preacher: string;

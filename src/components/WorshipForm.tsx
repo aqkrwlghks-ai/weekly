@@ -141,7 +141,7 @@ ${data.greetingContent}
 ${praiseText}
 
 • 🙏 대표기도: ${data.prayerLeader}
-• 📢 부서 광고 & 소식
+• 📢 교제 및 소식: ${data.announcementLeader}
 • 📖 말씀봉독: ${data.bibleVerse}
 • 💌 봉헌 & 감사의 기도
 • 📖 말씀 선포: [${data.sermonTitle}] - ${data.preacher}
@@ -171,6 +171,7 @@ ${checklistText}
 - 찬양 목록:
 ${data.praiseSongs.map((s, i) => `  ${i + 1}. ${s}`).join("\n")}
 - 대표기도: ${data.prayerLeader}
+- 교제 및 소식: ${data.announcementLeader}
 - 오늘의 말씀: ${data.bibleVerse}
 - 설교 제목: ${data.sermonTitle} (${data.preacher})
 - 결단 고백: ${data.decisionText}
@@ -375,7 +376,7 @@ ${data.checklists.map((chk) => `${chk.emoji} ${chk.text} - ${chk.subtext}`).join
               <span>⛪️</span> 예배 순서 상세 설정 (예배의 핵심 구절과 명칭)
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
                   <User className="w-3.5 h-3.5 text-slate-400 text-[10px]" /> 代表 대표기도 담당자
@@ -384,9 +385,23 @@ ${data.checklists.map((chk) => `${chk.emoji} ${chk.text} - ${chk.subtext}`).join
                   type="text"
                   value={data.prayerLeader}
                   onChange={(e) => handleUpdateField("prayerLeader", e.target.value)}
-                  className="w-full text-xs bg-slate-50 rounded-lg border border-slate-200 px-3 py-2 outline-none focus:bg-white focus:border-teal-500 transition-all"
+                  className="w-full text-xs bg-slate-50 rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:bg-white focus:border-teal-500 transition-all font-medium"
                   placeholder="박순장 (청년부 임원)"
                   id="liturgy-prayer"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 text-[10px]" /> 📢 교제 및 소식 담당자
+                </label>
+                <input
+                  type="text"
+                  value={data.announcementLeader}
+                  onChange={(e) => handleUpdateField("announcementLeader", e.target.value)}
+                  className="w-full text-xs bg-slate-50 rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:bg-white focus:border-teal-500 transition-all font-medium"
+                  placeholder="임원진"
+                  id="liturgy-announcement-leader"
                 />
               </div>
 
@@ -398,7 +413,7 @@ ${data.checklists.map((chk) => `${chk.emoji} ${chk.text} - ${chk.subtext}`).join
                   type="text"
                   value={data.bibleVerse}
                   onChange={(e) => handleUpdateField("bibleVerse", e.target.value)}
-                  className="w-full text-xs bg-slate-50 rounded-lg border border-slate-200 px-3 py-2 outline-none focus:bg-white focus:border-teal-500 transition-all"
+                  className="w-full text-xs bg-slate-50 rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:bg-white focus:border-teal-500 transition-all font-medium"
                   placeholder="로마서 12장 1-2절"
                   id="liturgy-bible"
                 />
