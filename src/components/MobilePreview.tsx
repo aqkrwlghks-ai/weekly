@@ -272,12 +272,24 @@ ${checklistsText}
                         <span className="font-bold text-[11px] tracking-wide">찬양과 경배 (Praise)</span>
                       </div>
                       <ul className="pl-6 space-y-1">
-                        {praiseList.map((song, i) => (
-                          <li key={i} className="text-[10.5px] opacity-80 flex items-start gap-1">
-                            <span className="text-teal-500 font-mono">•</span>
-                            <span className="break-all">{song}</span>
-                          </li>
-                        ))}
+                        {praiseList.map((song, i) => {
+                          const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(song + " 찬양")}`;
+                          return (
+                            <li key={i} className="text-[10.5px] opacity-85 flex items-start gap-1">
+                              <span className="text-teal-500 font-mono select-none">•</span>
+                              <a 
+                                href={youtubeUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="break-all hover:text-red-500 hover:underline transition-all cursor-pointer flex items-center gap-1 text-inherit no-underline"
+                                title="유튜브로 찬양 검색해서 듣기"
+                              >
+                                <span>{song}</span>
+                                <span className="text-[7px] bg-red-500 text-white px-1 py-0.5 rounded font-sans font-extrabold tracking-tighter scale-90 inline-block leading-none">PLAY</span>
+                              </a>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
 
