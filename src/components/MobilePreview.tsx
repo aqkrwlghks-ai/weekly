@@ -53,9 +53,9 @@ export default function MobilePreview({ data, activeTheme, hideToggle = false }:
           }
         }
       }, "image/png");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Image generation failed:", error);
-      alert("이미지 생성 중 오류가 발생했습니다.");
+      alert(`이미지 생성 중 오류가 발생했습니다: ${error?.message || error}`);
     }
   };
 
@@ -74,9 +74,9 @@ export default function MobilePreview({ data, activeTheme, hideToggle = false }:
       link.href = image;
       link.download = `weekly-bulletin-${(data.sermonTitle || 'card').replace(/\s+/g, '_')}.png`;
       link.click();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Image download failed:", error);
-      alert("이미지 다운로드 중 오류가 발생했습니다.");
+      alert(`이미지 다운로드 중 오류가 발생했습니다: ${error?.message || error}`);
     }
   };
 
