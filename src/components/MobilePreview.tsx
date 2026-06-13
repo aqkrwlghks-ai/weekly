@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BulletinData, DesignTheme } from "../types";
-import { encodeData, shortenUrl, copyTextAsync } from "../utils";
+import { encodeData, shortenUrl, copyTextAsync, copyTextLegacy } from "../utils";
 import html2canvas from "html2canvas-pro";
 import { 
   Smartphone, 
@@ -14,7 +14,10 @@ import {
   ChevronRight,
   ClipboardCopy,
   Download,
-  Link2
+  Link2,
+  X,
+  Copy,
+  Check
 } from "lucide-react";
 
 interface MobilePreviewProps {
@@ -25,7 +28,10 @@ interface MobilePreviewProps {
 
 export default function MobilePreview({ data, activeTheme, hideToggle = false }: MobilePreviewProps) {
   const [viewMode, setViewMode] = useState<"card" | "kakao">("card");
-  const [isShortening, setIsShortening] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shortenedUrl, setShortenedUrl] = useState("");
+  const [isLoadingLink, setIsLoadingLink] = useState(false);
+  const [copiedInModal, setCopiedInModal] = useState(false);
 
   const praiseList = data.praiseSongs;
 
@@ -81,25 +87,79 @@ export default function MobilePreview({ data, activeTheme, hideToggle = false }:
     }
   };
 
-  // 3. Copy Web Share Link (Shortened via is.gd/v.gd JSONP API, with iOS Safari / WebView support)
+  // 3. Copy Web Share Link (Opens a modal with iOS Safari / WebView support)
   const handleCopyShareLink = async () => {
     const encoded = encodeData(data);
     const longUrl = `${window.location.origin}${window.location.pathname}?theme=${activeTheme.id}&data=${encoded}`;
     
-    setIsShortening(true);
+    setShowShareModal(true);
+    setIsLoadingLink(true);
+    setShortenedUrl("");
+    setCopiedInModal(false);
+    
     try {
-      const copiedUrl = await copyTextAsync(longUrl, () => shortenUrl(longUrl));
-      const isShortened = copiedUrl !== longUrl;
-      if (isShortened) {
-        alert("🔗 축소된 모바일 주보 공유 주소가 복사되었습니다!\n카카오톡 단체방이나 공지방에 붙여넣기 하세요.");
+      // Attempt to shorten the link asynchronously
+      const shortUrl = await shortenUrl(longUrl);
+      setShortenedUrl(shortUrl);
+      setIsLoadingLink(false);
+      
+      // Attempt automatic copying as a convenience.
+      // If it fails (due to async restrictions in Safari/WebView), the user can still click the copy button manually in the modal.
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(shortUrl);
+          setCopiedInModal(true);
+          setTimeout(() => setCopiedInModal(false), 2000);
+        } catch (e) {
+          // Silent failure - the user will copy manually using the button in the modal
+        }
       } else {
-        alert("🔗 모바일 주보 공유 주소가 복사되었습니다!\n(일시적인 네트워크 단축 API 오류로 긴 원본 주소가 복사되었습니다.)");
+        // Fallback for non-secure contexts
+        const success = copyTextLegacy(shortUrl);
+        if (success) {
+          setCopiedInModal(true);
+          setTimeout(() => setCopiedInModal(false), 2000);
+        }
       }
     } catch (err) {
-      console.error("Link copy failed:", err);
-      alert("링크 복사 중 오류가 발생했습니다. 브라우저 설정을 확인해 주세요.");
-    } finally {
-      setIsShortening(false);
+      console.warn("Link shortening failed, using long URL:", err);
+      setShortenedUrl(longUrl);
+      setIsLoadingLink(false);
+      
+      // Attempt auto-copy for long URL
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(longUrl);
+          setCopiedInModal(true);
+          setTimeout(() => setCopiedInModal(false), 2000);
+        } catch (e) {
+          // Silent failure
+        }
+      } else {
+        const success = copyTextLegacy(longUrl);
+        if (success) {
+          setCopiedInModal(true);
+          setTimeout(() => setCopiedInModal(false), 2000);
+        }
+      }
+    }
+  };
+
+  // 3.5. Copy helper inside the modal (Guaranteed synchronous click handler)
+  const handleModalCopy = async () => {
+    if (!shortenedUrl) return;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shortenedUrl);
+      } else {
+        const success = copyTextLegacy(shortenedUrl);
+        if (!success) throw new Error("Fallback copy failed");
+      }
+      setCopiedInModal(true);
+      setTimeout(() => setCopiedInModal(false), 2000);
+    } catch (err) {
+      console.error("Modal copy failed:", err);
+      alert("클립보드 복사에 실패했습니다. 링크를 직접 선택하여 복사해 주세요.");
     }
   };
 
@@ -538,11 +598,10 @@ ${checklistsText}
 
               <button
                 onClick={handleCopyShareLink}
-                disabled={isShortening}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl shadow-xs transition-all cursor-pointer"
               >
-                <Link2 className={`w-3.5 h-3.5 text-teal-600 ${isShortening ? "animate-spin" : ""}`} />
-                <span>{isShortening ? "링크 축소 중..." : "💬 카카오톡 공유 링크 복사"}</span>
+                <Link2 className="w-3.5 h-3.5 text-teal-600" />
+                <span>💬 카카오톡 공유 링크 복사</span>
               </button>
             </>
           ) : (
@@ -554,6 +613,89 @@ ${checklistsText}
               <span>카카오톡 전송 텍스트 복사</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* Share Modal Dialog */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-all duration-300">
+          <div className="bg-white rounded-2xl w-full max-w-[340px] overflow-hidden shadow-2xl border border-slate-100 flex flex-col p-5 space-y-4 transform transition-all scale-100 duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <span>💬 모바일 주보 공유</span>
+              </h3>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-100 border-0 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="space-y-4 py-1">
+              {/* Link Input & Copy Box */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  주보 단축 링크
+                </label>
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    readOnly
+                    value={isLoadingLink ? "단축 링크 생성 중..." : shortenedUrl}
+                    className="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-2 rounded-xl focus:outline-none"
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                  />
+                  <button
+                    onClick={handleModalCopy}
+                    disabled={isLoadingLink}
+                    className="px-3.5 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-xs transition-all cursor-pointer border-0 disabled:opacity-50 flex items-center gap-1 shrink-0"
+                  >
+                    {copiedInModal ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>복사됨</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>복사</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* QR Code Section */}
+              {!isLoadingLink && shortenedUrl && (
+                <div className="flex flex-col items-center justify-center p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(shortenedUrl)}`}
+                    alt="주보 QR Code"
+                    className="w-[110px] h-[110px] rounded-lg shadow-xs bg-white p-1"
+                  />
+                  <span className="text-[10px] text-slate-400 text-center font-medium">
+                    스마트폰 카메라로 스캔하여 바로 접속할 수 있습니다.
+                  </span>
+                </div>
+              )}
+
+              {/* Tips */}
+              <div className="text-[10.5px] text-slate-500 bg-teal-50/50 border border-teal-100/50 p-2.5 rounded-xl leading-relaxed">
+                💡 <strong>카카오톡 전송 팁:</strong> 복사된 단축 링크를 카카오톡 공지방이나 단체 채팅방에 보내면 청년들이 스마트폰 전용 카드뷰로 주보를 바로 볼 수 있습니다.
+              </div>
+            </div>
+
+            {/* Footer */}
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="w-full py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer border-0"
+            >
+              닫기
+            </button>
+          </div>
         </div>
       )}
 

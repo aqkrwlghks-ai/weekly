@@ -140,7 +140,7 @@ export function copyTextAsync(longUrl: string, shortenFn: () => Promise<string>)
   });
 }
 
-function copyTextLegacy(text: string): boolean {
+export function copyTextLegacy(text: string): boolean {
   const textArea = document.createElement("textarea");
   textArea.value = text;
   textArea.style.position = "fixed";
