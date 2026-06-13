@@ -277,29 +277,14 @@ ${checklistsText}
         </div>
       )}
 
-      {/* Smartphone Outer Shell Mockup */}
-      <div className="relative w-full max-w-[350px] aspect-[9/19.5] bg-slate-950 rounded-[40px] p-2.5 shadow-2xl border-4 border-slate-800 ring-8 ring-slate-900 ring-offset-2 ring-offset-slate-100 flex flex-col overflow-hidden">
+      {/* Clean Graphic Card / Chat Preview Container */}
+      <div className={hideToggle 
+        ? "w-full bg-white rounded-2xl shadow-xl border border-slate-100/50" 
+        : "w-full max-w-[345px] bg-white rounded-2xl shadow-lg border border-slate-200/60 flex flex-col overflow-hidden h-[680px]"
+      }>
         
-        {/* Smartphone Speaker Sensor Notch */}
-        <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-32 h-4.5 bg-black rounded-b-2xl z-50 flex items-center justify-center">
-          <div className="w-12 h-1 bg-neutral-800 rounded-full mb-1"></div>
-        </div>
-
-        {/* Smartphone Status Bar Area */}
-        <div className="flex justify-between items-center px-6 pt-3.5 pb-1 text-black/85 z-40 text-[10px] font-mono shrink-0 font-medium">
-          <span className={(viewMode === "card" || hideToggle) && activeTheme.id === "deep" ? "text-slate-400" : "text-slate-600"}>
-            20:00 Sat
-          </span>
-          <div className="flex items-center gap-1">
-            <span className={`w-3 h-1.5 rounded-xs border ${(viewMode === "card" || hideToggle) && activeTheme.id === "deep" ? "border-slate-500 bg-emerald-500" : "border-slate-800 bg-emerald-600"}`}></span>
-            <span className={(viewMode === "card" || hideToggle) && activeTheme.id === "deep" ? "text-slate-400" : "text-slate-600"}>
-              LTE
-            </span>
-          </div>
-        </div>
-
         {/* INTERNALS OF SCREEN */}
-        <div className="flex-1 rounded-[32px] overflow-hidden relative flex flex-col">
+        <div className={hideToggle ? "relative bg-white" : "flex-1 overflow-hidden relative flex flex-col bg-white"}>
           
           {/* VIEW: Card (Canva Graphic Design Theme Preview) */}
           {(viewMode === "card" || hideToggle) && (
@@ -311,7 +296,7 @@ ${checklistsText}
                     ? "'Playfair Display', serif"
                     : undefined
               }}
-              className="flex-1 overflow-y-auto select-none scrollbar-thin bg-white"
+              className={hideToggle ? "select-none bg-white w-full" : "flex-1 overflow-y-auto select-none scrollbar-thin bg-white"}
               id="card-mode-view"
             >
               {/* Inner wrapper for html2canvas capturing */}
