@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BulletinData, DesignTheme } from "../types";
-import { encodeData } from "../utils";
+import { encodeData, shortenUrl } from "../utils";
 import html2canvas from "html2canvas-pro";
 import { 
   Smartphone, 
@@ -25,6 +25,7 @@ interface MobilePreviewProps {
 
 export default function MobilePreview({ data, activeTheme, hideToggle = false }: MobilePreviewProps) {
   const [viewMode, setViewMode] = useState<"card" | "kakao">("card");
+  const [isShortening, setIsShortening] = useState(false);
 
   const praiseList = data.praiseSongs;
 
@@ -80,17 +81,28 @@ export default function MobilePreview({ data, activeTheme, hideToggle = false }:
     }
   };
 
-  // 3. Copy Web Share Link
-  const handleCopyShareLink = () => {
+  // 3. Copy Web Share Link (Shortened via is.gd/v.gd JSONP API)
+  const handleCopyShareLink = async () => {
     const encoded = encodeData(data);
-    const shareUrl = `${window.location.origin}${window.location.pathname}?theme=${activeTheme.id}&data=${encoded}`;
+    const longUrl = `${window.location.origin}${window.location.pathname}?theme=${activeTheme.id}&data=${encoded}`;
     
-    navigator.clipboard.writeText(shareUrl)
-      .then(() => alert("🔗 모바일 주보 공유용 웹 주소가 복사되었습니다!\n카카오톡 채팅방이나 공지방에 붙여넣기 하세요."))
-      .catch((err) => {
-        console.error("Link copy failed:", err);
+    setIsShortening(true);
+    try {
+      const shortUrl = await shortenUrl(longUrl);
+      await navigator.clipboard.writeText(shortUrl);
+      alert("🔗 축소된 모바일 주보 공유 주소가 복사되었습니다!\n카카오톡 단체방이나 공지방에 붙여넣기 하세요.");
+    } catch (err) {
+      console.error("Link shortening failed, falling back to long URL:", err);
+      try {
+        await navigator.clipboard.writeText(longUrl);
+        alert("🔗 모바일 주보 공유 주소가 복사되었습니다! (단축 API 오류로 기존 긴 주소가 복사되었습니다.)");
+      } catch (fallbackErr) {
+        console.error("Link copy failed:", fallbackErr);
         alert("링크 복사 중 오류가 발생했습니다.");
-      });
+      }
+    } finally {
+      setIsShortening(false);
+    }
   };
 
   // 4. Copy Kakao Text equivalent
@@ -528,10 +540,11 @@ ${checklistsText}
 
               <button
                 onClick={handleCopyShareLink}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl shadow-xs transition-all cursor-pointer"
+                disabled={isShortening}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Link2 className="w-3.5 h-3.5 text-teal-600" />
-                <span>💬 카카오톡 공유 링크 복사</span>
+                <Link2 className={`w-3.5 h-3.5 text-teal-600 ${isShortening ? "animate-spin" : ""}`} />
+                <span>{isShortening ? "링크 축소 중..." : "💬 카카오톡 공유 링크 복사"}</span>
               </button>
             </>
           ) : (
