@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BulletinData, DesignTheme } from "../types";
-import { encodeData, shortenUrl } from "../utils";
+import { encodeData, shortenUrl, copyTextAsync } from "../utils";
 import html2canvas from "html2canvas-pro";
 import { 
   Smartphone, 
@@ -81,25 +81,23 @@ export default function MobilePreview({ data, activeTheme, hideToggle = false }:
     }
   };
 
-  // 3. Copy Web Share Link (Shortened via is.gd/v.gd JSONP API)
+  // 3. Copy Web Share Link (Shortened via is.gd/v.gd JSONP API, with iOS Safari / WebView support)
   const handleCopyShareLink = async () => {
     const encoded = encodeData(data);
     const longUrl = `${window.location.origin}${window.location.pathname}?theme=${activeTheme.id}&data=${encoded}`;
     
     setIsShortening(true);
     try {
-      const shortUrl = await shortenUrl(longUrl);
-      await navigator.clipboard.writeText(shortUrl);
-      alert("🔗 축소된 모바일 주보 공유 주소가 복사되었습니다!\n카카오톡 단체방이나 공지방에 붙여넣기 하세요.");
-    } catch (err) {
-      console.error("Link shortening failed, falling back to long URL:", err);
-      try {
-        await navigator.clipboard.writeText(longUrl);
-        alert("🔗 모바일 주보 공유 주소가 복사되었습니다! (단축 API 오류로 기존 긴 주소가 복사되었습니다.)");
-      } catch (fallbackErr) {
-        console.error("Link copy failed:", fallbackErr);
-        alert("링크 복사 중 오류가 발생했습니다.");
+      const copiedUrl = await copyTextAsync(longUrl, () => shortenUrl(longUrl));
+      const isShortened = copiedUrl !== longUrl;
+      if (isShortened) {
+        alert("🔗 축소된 모바일 주보 공유 주소가 복사되었습니다!\n카카오톡 단체방이나 공지방에 붙여넣기 하세요.");
+      } else {
+        alert("🔗 모바일 주보 공유 주소가 복사되었습니다!\n(일시적인 네트워크 단축 API 오류로 긴 원본 주소가 복사되었습니다.)");
       }
+    } catch (err) {
+      console.error("Link copy failed:", err);
+      alert("링크 복사 중 오류가 발생했습니다. 브라우저 설정을 확인해 주세요.");
     } finally {
       setIsShortening(false);
     }

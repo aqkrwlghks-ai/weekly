@@ -86,3 +86,80 @@ export function shortenUrl(longUrl: string): Promise<string> {
     });
 }
 
+/**
+ * Asynchronously copies text to the clipboard while preserving user gesture context (essential for iOS Safari / WebViews).
+ * It uses ClipboardItem with a Promise under the hood, and falls back to textarea execCommand if unsupported.
+ */
+export function copyTextAsync(longUrl: string, shortenFn: () => Promise<string>): Promise<string> {
+  const urlPromise = shortenFn()
+    .catch((err) => {
+      console.warn("Shortening failed, using long URL:", err);
+      return longUrl;
+    });
+
+  return new Promise((resolve, reject) => {
+    // Check if ClipboardItem and write are supported
+    if (typeof ClipboardItem !== "undefined" && navigator.clipboard && window.isSecureContext) {
+      try {
+        const textBlobPromise = urlPromise.then((url) => new Blob([url], { type: "text/plain" }));
+        const item = new ClipboardItem({
+          "text/plain": textBlobPromise
+        });
+
+        navigator.clipboard.write([item])
+          .then(() => {
+            urlPromise.then((url) => resolve(url));
+          })
+          .catch((err) => {
+            console.warn("navigator.clipboard.write failed, falling back to legacy:", err);
+            doLegacyFallback();
+          });
+        return;
+      } catch (err) {
+        console.warn("ClipboardItem constructor failed, falling back to legacy:", err);
+      }
+    }
+
+    doLegacyFallback();
+
+    function doLegacyFallback() {
+      urlPromise.then((url) => {
+        const success = copyTextLegacy(url);
+        if (success) {
+          resolve(url);
+        } else {
+          const fallbackSuccess = copyTextLegacy(longUrl);
+          if (fallbackSuccess) {
+            resolve(longUrl);
+          } else {
+            reject(new Error("Copy failed"));
+          }
+        }
+      });
+    }
+  });
+}
+
+function copyTextLegacy(text: string): boolean {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  textArea.style.top = "0";
+  document.body.appendChild(textArea);
+  
+  // Highlight/select the text
+  textArea.focus();
+  textArea.select();
+  
+  try {
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textArea);
+    return successful;
+  } catch (err) {
+    console.error("Legacy copy failed:", err);
+    document.body.removeChild(textArea);
+    return false;
+  }
+}
+
